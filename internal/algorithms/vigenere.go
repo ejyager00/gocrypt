@@ -5,34 +5,39 @@ package algorithms
 
 import "github.com/ejyager00/gocrypt/internal/util"
 
+const (
+	upperOffset = byte(65)
+	lowerOffset = byte(97)
+	alphabetLen = byte(26)
+)
+
 func VigenereEncrypt(cleartext string, keyword string) string {
-	b := []byte(cleartext)
-	ku, kl, k_len := getKeys(keyword)
+	return vigenereTransform(cleartext, keyword, subtractKey)
+}
+func VigenereDecrypt(ciphertext string, keyword string) string {
+	return vigenereTransform(ciphertext, keyword, addKey)
+}
+
+func vigenereTransform(text string, keyword string, operation func(byte, byte, byte) byte) string {
+	b := []byte(text)
+	ku, kl, kLen := getKeys(keyword)
+
 	for i, x := range b {
 		if util.IsUpper(x) {
-			b[i] = ((x-65)-(ku[i%k_len]-65)+26)%26 + 65
+			b[i] = operation(x, ku[i%kLen], upperOffset)
 		} else if util.IsLower(x) {
-			b[i] = ((x-97)-(kl[i%k_len]-97)+26)%26 + 97
-		} else {
-			b[i] = x
+			b[i] = operation(x, kl[i%kLen], lowerOffset)
 		}
 	}
 	return string(b)
 }
 
-func VigenereDecrypt(ciphertext string, keyword string) string {
-	b := []byte(ciphertext)
-	ku, kl, k_len := getKeys(keyword)
-	for i, x := range b {
-		if util.IsUpper(x) {
-			b[i] = ((x-65)+(ku[i%k_len]-65))%26 + 65
-		} else if util.IsLower(x) {
-			b[i] = ((x-97)+(kl[i%k_len]-97))%26 + 97
-		} else {
-			b[i] = x
-		}
-	}
-	return string(b)
+func subtractKey(char byte, key byte, offset byte) byte {
+	return ((char-offset)-(key-offset)+alphabetLen)%alphabetLen + offset
+}
+
+func addKey(char byte, key byte, offset byte) byte {
+	return ((char-offset)+(key-offset))%alphabetLen + offset
 }
 
 func getKeys(k string) ([]byte, []byte, int) {
